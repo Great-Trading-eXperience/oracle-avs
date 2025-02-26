@@ -65,7 +65,7 @@ $ anvil --help
 $ cast --help
 ```
 
-## Crediflex AVS Contracts
+## GTXOracle AVS Contracts
 
 ## Usage
 
@@ -84,5 +84,5 @@ $ forge script script/DeployEigenLayerCore.s.sol --rpc-url <RPC_URL> --broadcast
 ### Deploy Jackramp
 
 ```shell
-$ forge script script/CrediflexDeployer.s.sol --rpc-url  <RPC_URL> --broadcast
+$ forge script script/GTXOracleDeployer.s.sol --rpc-url  <RPC_URL> --broadcast
 ```

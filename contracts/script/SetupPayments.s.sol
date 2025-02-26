@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
-import {CrediflexDeploymentLib} from "./utils/CrediflexDeploymentLib.sol";
+import {GTXOracleDeploymentLib} from "./utils/GTXOracleDeploymentLib.sol";
 import {CoreDeploymentLib} from "./utils/CoreDeploymentLib.sol";
 import {SetupPaymentsLib} from "./utils/SetupPaymentsLib.sol";
 import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
@@ -22,7 +22,7 @@ contract SetupPayments is Script {
 
     address private deployer;
     CoreDeploymentLib.DeploymentData coreDeployment;
-    CrediflexDeploymentLib.DeploymentData crediflexDeployment;
+    GTXOracleDeploymentLib.DeploymentData gtxOracleDeployment;
     string internal constant filePath = "test/mockData/scratch/payments.json";
 
     uint256 constant NUM_TOKEN_EARNINGS = 1;
@@ -33,8 +33,8 @@ contract SetupPayments is Script {
         vm.label(deployer, "Deployer");
 
         coreDeployment = CoreDeploymentLib.readDeploymentJson("deployments/core/", block.chainid);
-        crediflexDeployment =
-            CrediflexDeploymentLib.readDeploymentJson("deployments/hello-world/", block.chainid);
+        gtxOracleDeployment =
+            GTXOracleDeploymentLib.readDeploymentJson("deployments/hello-world/", block.chainid);
 
         // TODO: Get the filePath from config
     }
@@ -70,7 +70,7 @@ contract SetupPayments is Script {
     ) public {
         SetupPaymentsLib.createAVSRewardsSubmissions(
             IRewardsCoordinator(coreDeployment.rewardsCoordinator),
-            crediflexDeployment.strategy,
+            gtxOracleDeployment.strategy,
             numPayments,
             amountPerPayment,
             duration,
@@ -91,7 +91,7 @@ contract SetupPayments is Script {
             recipient,
             earnerLeaf,
             NUM_TOKEN_EARNINGS,
-            crediflexDeployment.strategy
+            gtxOracleDeployment.strategy
         );
     }
 
@@ -105,7 +105,7 @@ contract SetupPayments is Script {
             IRewardsCoordinator(coreDeployment.rewardsCoordinator),
             NUM_TOKEN_EARNINGS,
             amountPerPayment,
-            crediflexDeployment.strategy
+            gtxOracleDeployment.strategy
         );
         IRewardsCoordinator.EarnerTreeMerkleLeaf[] memory earnerLeaves =
             SetupPaymentsLib.createEarnerLeaves(earners, tokenLeaves);
@@ -114,7 +114,7 @@ contract SetupPayments is Script {
             IRewardsCoordinator(coreDeployment.rewardsCoordinator),
             tokenLeaves,
             earnerLeaves,
-            crediflexDeployment.strategy,
+            gtxOracleDeployment.strategy,
             endTimestamp,
             numPayments,
             NUM_TOKEN_EARNINGS,

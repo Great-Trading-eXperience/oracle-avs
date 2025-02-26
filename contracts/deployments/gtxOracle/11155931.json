@@ -1,0 +1,12 @@
+{
+	"lastUpdate": { "timestamp": "1740610314", "block_number": "5521554" },
+	"addresses": {
+		"proxyAdmin": "0x1c740e6e6d3c8ae15eb79158598c11f03eba1d0f",
+		"gtxOracleServiceManager": "0x957b4957065a079e9aed9941e6f8b1290cea7319",
+		"gtxOracleServiceManagerImpl": "0x3a7c9db511d8678b56847761fa13acb8d2713969",
+		"stakeRegistry": "0x5b38daeb711aaacee542368e4ce5f9139a6b1a34",
+		"stakeRegistryImpl": "0xcd4e57a8fab379bf2b370db6d9e81023aa6cef34",
+		"strategy": "0xc328a1978e67141e7a4ff2a54133966dff2b07f4",
+		"token": "0xc7f2cf4845c6db0e1a1e91ed41bcd0fcc1b0e141"
+	}
+}

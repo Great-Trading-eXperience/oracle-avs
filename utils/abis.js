@@ -9,7 +9,7 @@ const contractsToExtract = [
 	"IAVSDirectory",
 	"IDelegationManager",
 	"ECDSAStakeRegistry",
-	"CrediflexServiceManager",
+	"GTXOracleServiceManager",
 ];
 
 if (!fs.existsSync(abiDir)) {

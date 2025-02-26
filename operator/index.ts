@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import * as dotenv from "dotenv";
-import { calculateUserCScore } from "./calculateCScore";
-import { fetchAndVerifyProof } from "./reclaimZkFetch";
+import { calculateAvgPrice } from "./calculateAvgPrice";
+import { generateProof } from "./reclaimZkFetch";
 const fs = require("fs");
 const path = require("path");
 dotenv.config();
@@ -15,13 +15,14 @@ if (!Object.keys(process.env).length) {
 const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
 const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, provider);
 /// TODO: Hack
-let chainId = 421614;
+let chainId = process.env.CHAIN_ID!;
+// let chainId = 421614;
 
 const avsDeploymentData = JSON.parse(
 	fs.readFileSync(
 		path.resolve(
 			__dirname,
-			`../contracts/deployments/crediflex/${chainId}.json`
+			`../contracts/deployments/gtxOracle/${chainId}.json`
 		),
 		"utf8"
 	)
@@ -36,8 +37,8 @@ const coreDeploymentData = JSON.parse(
 
 const delegationManagerAddress = coreDeploymentData.addresses.delegation;
 const avsDirectoryAddress = coreDeploymentData.addresses.avsDirectory;
-const crediflexServiceManagerAddress =
-	avsDeploymentData.addresses.crediflexServiceManager;
+const gtxOracleServiceManagerAddress =
+	avsDeploymentData.addresses.gtxOracleServiceManager;
 const ecdsaStakeRegistryAddress = avsDeploymentData.addresses.stakeRegistry;
 
 // Load ABIs
@@ -53,9 +54,9 @@ const ecdsaRegistryABI = JSON.parse(
 		"utf8"
 	)
 );
-const crediflexServiceManagerABI = JSON.parse(
+const gtxOracleServiceManagerABI = JSON.parse(
 	fs.readFileSync(
-		path.resolve(__dirname, "../abis/CrediflexServiceManager.json"),
+		path.resolve(__dirname, "../abis/GTXOracleServiceManager.json"),
 		"utf8"
 	)
 );
@@ -69,9 +70,9 @@ const delegationManager = new ethers.Contract(
 	delegationManagerABI,
 	wallet
 );
-const crediflexServiceManager = new ethers.Contract(
-	crediflexServiceManagerAddress,
-	crediflexServiceManagerABI,
+const gtxOracleServiceManager = new ethers.Contract(
+	gtxOracleServiceManagerAddress,
+	gtxOracleServiceManagerABI,
 	wallet
 );
 const ecdsaRegistryContract = new ethers.Contract(
@@ -87,54 +88,40 @@ const avsDirectory = new ethers.Contract(
 
 const signAndRespondToTask = async (
 	taskIndex: number,
-	task: [string, bigint]
+	task: [string, bigint, [string, string, string]]
 ) => {
+	const [coingeckoSymbol, binanceSymbol, okxSymbol] = task[2];
 	console.log(`Processing Task #${taskIndex}...`);
-	const walletAddress = task[0];
-	const verifiedProofTransactionSummary = await fetchAndVerifyProof(
-		walletAddress,
-		"transactions_summary"
-	);
-	console.log(
-		"Verified Proof Transaction Summary:",
-		verifiedProofTransactionSummary
-	);
 
-	const verifiedProofBalances = await fetchAndVerifyProof(
-		walletAddress,
-		"balances"
-	);
-	console.log("Verified Proof Balances:", verifiedProofBalances);
+	const coingeckoProof = await generateProof("coingecko", coingeckoSymbol);
+	// console.log(coingeckoProof);
 
-	const verifiedProofChainActivity = await fetchAndVerifyProof(
-		walletAddress,
-		"chain_activity"
-	);
-	console.log("Verified Proof Chain Activity:", verifiedProofChainActivity);
+	const binanceProof = await generateProof("binance", binanceSymbol);
+	// console.log(binanceProof);
 
-	if (
-		!verifiedProofBalances ||
-		!verifiedProofTransactionSummary ||
-		!verifiedProofChainActivity
-	) {
-		console.log(
-			"No verified proofs found for chain activity, balances and transaction summary."
-		);
+	const okxProof = await generateProof("okx", okxSymbol);
+	// console.log(okxProof);
+
+	if (!coingeckoProof || !binanceProof || !okxProof) {
+		console.log("Failed to generate proofs for one or more sources.");
 		return;
 	}
-
-	const finalCScore = calculateUserCScore({
-		transactionData: verifiedProofTransactionSummary.data,
-		balanceData: verifiedProofBalances.data,
-		chainActivityData: verifiedProofChainActivity.data,
-	});
-
-	console.log(`CScore for task #${task[0]}:`, finalCScore.toString());
-
-	const messageHash = ethers.solidityPackedKeccak256(
-		["string"],
-		[`Respond task with index ${task[0]}`]
+	const validProofs = [coingeckoProof, binanceProof, okxProof].filter(
+		(proof) => proof
 	);
+	const validProof = validProofs.length > 0 ? validProofs[0] : null;
+
+	const avgPrice = calculateAvgPrice([
+		coingeckoProof.proof,
+		binanceProof.proof,
+		okxProof.proof,
+	]);
+
+	console.log(`Average price for task #${task[0]}:`, avgPrice.toString());
+
+	const message =
+		"Hello, this is a signed message from the GTX Oracle Service Manager.";
+	const messageHash = ethers.solidityPackedKeccak256(["string"], [message]);
 	const messageBytes = ethers.getBytes(messageHash);
 	const signature = await wallet.signMessage(messageBytes);
 
@@ -150,17 +137,22 @@ const signAndRespondToTask = async (
 			ethers.toBigInt((await provider.getBlockNumber()) - 1),
 		]
 	);
-
 	const params = {
-		user: task[0],
+		tokenPair: task[0],
 		taskCreatedBlock: task[1],
+		source: {
+			coingeckoSymbol: task[2][0],
+			binanceSymbol: task[2][1],
+			okxSymbol: task[2][2],
+		},
 	};
 
-	const tx = await crediflexServiceManager.respondToTask(
+	const tx = await gtxOracleServiceManager.respondToOracleTask(
 		params,
-		finalCScore,
+		avgPrice,
 		taskIndex,
-		signedTask
+		signedTask,
+		validProof.transformedProof
 	);
 	await tx.wait();
 	console.log(`Responded to task...`);
@@ -194,7 +186,7 @@ const registerOperator = async () => {
 	const operatorDigestHash =
 		await avsDirectory.calculateOperatorAVSRegistrationDigestHash(
 			wallet.address,
-			await crediflexServiceManager.getAddress(),
+			await gtxOracleServiceManager.getAddress(),
 			salt,
 			expiry
 		);
@@ -222,8 +214,8 @@ const registerOperator = async () => {
 export const monitorNewTasks = async () => {
 	console.log("Monitoring for new tasks...");
 
-	crediflexServiceManager.on(
-		"NewTaskCreated",
+	gtxOracleServiceManager.on(
+		"NewOracleTaskCreated",
 		async (taskIndex: number, task: any) => {
 			console.log(taskIndex, task);
 			console.log(`New task detected: Task, #${taskIndex}`);
@@ -232,50 +224,44 @@ export const monitorNewTasks = async () => {
 	);
 };
 
-export const processNewTasksByLastEvent = async () => {
-	console.log("Checking for the latest NewTaskCreated event...");
+// export const processNewTasksByLastEvent = async () => {
+// 	console.log("Checking for the latest NewTaskCreated event...");
 
-	try {
-		const latestBlock = await provider.getBlockNumber();
-		const filter = crediflexServiceManager.filters.NewTaskCreated();
-		const logs = await crediflexServiceManager.queryFilter(
-			filter,
-			latestBlock - 1000,
-			latestBlock
-		);
+// 	try {
+// 		const latestBlock = await provider.getBlockNumber();
+// 		const filter = gtxOracleServiceManager.filters.NewTaskCreated();
+// 		const logs = await gtxOracleServiceManager.queryFilter(
+// 			filter,
+// 			latestBlock - 1000,
+// 			latestBlock
+// 		);
 
-		if (logs.length === 0) {
-			console.log("No new tasks found.");
-			return;
-		}
+// 		if (logs.length === 0) {
+// 			console.log("No new tasks found.");
+// 			return;
+// 		}
 
-		const latestEvent = logs[logs.length - 1];
-		const args = (latestEvent as any).args;
+// 		const latestEvent = logs[logs.length - 1];
+// 		const args = (latestEvent as any).args;
 
-		if (args && args[0] !== undefined) {
-			console.log(`Processing NewTaskCreated event: Task #${args[0]}`);
-			await signAndRespondToTask(args[0], args[1]);
-		} else {
-			console.error("Event args are missing or malformed.");
-		}
-	} catch (error) {
-		console.error("Error fetching or processing events:", error);
-	}
-};
-
-// const main = async () => {
-// 	// await registerOperator();
-// 	monitorNewTasks().catch((error) => {
-// 		console.error("Error monitoring tasks:", error);
-// 	});
+// 		if (args && args[0] !== undefined) {
+// 			console.log(`Processing NewTaskCreated event: Task #${args[0]}`);
+// 			await signAndRespondToTask(args[0], args[1]);
+// 		} else {
+// 			console.error("Event args are missing or malformed.");
+// 		}
+// 	} catch (error) {
+// 		console.error("Error fetching or processing events:", error);
+// 	}
 // };
 
-// main().catch((error) => {
-// 	console.error("Error in main function:", error);
-// });
+const main = async () => {
+	// await registerOperator();
+	monitorNewTasks().catch((error) => {
+		console.error("Error monitoring tasks:", error);
+	});
+};
 
-// signAndRespondToTask(1, [
-// 	"0x8757F328371E571308C1271BD82B91882253FDd1",
-// 	BigInt(1234567890),
-// 	BigInt(9876543210),
-// ]);
+main().catch((error) => {
+	console.error("Error in main function:", error);
+});

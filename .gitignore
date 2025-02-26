@@ -32,3 +32,6 @@ debug/
 yarn.lock
 # contracts/deployments/
 .vercel
+package-lock.json
+
+

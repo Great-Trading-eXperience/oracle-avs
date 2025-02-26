@@ -5,9 +5,7 @@ import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoor
 import {IStrategy} from "eigenlayer-contracts/src/contracts/interfaces/IStrategyManager.sol";
 import {Vm} from "forge-std/Vm.sol";
 
-
 library SetupPaymentsLib {
-
     Vm internal constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
     struct PaymentLeaves {
@@ -23,19 +21,22 @@ library SetupPaymentsLib {
         uint32 duration,
         uint32 startTimestamp
     ) internal {
-        IRewardsCoordinator.RewardsSubmission[] memory rewardsSubmissions = new IRewardsCoordinator.RewardsSubmission[](numPayments);
+        IRewardsCoordinator.RewardsSubmission[] memory rewardsSubmissions =
+            new IRewardsCoordinator.RewardsSubmission[](numPayments);
         for (uint256 i = 0; i < numPayments; i++) {
-            IRewardsCoordinator.StrategyAndMultiplier[] memory strategiesAndMultipliers = new IRewardsCoordinator.StrategyAndMultiplier[](1);
+            IRewardsCoordinator.StrategyAndMultiplier[] memory strategiesAndMultipliers =
+                new IRewardsCoordinator.StrategyAndMultiplier[](1);
             strategiesAndMultipliers[0] = IRewardsCoordinator.StrategyAndMultiplier({
                 strategy: IStrategy(strategy),
-                multiplier: 10000
+                multiplier: 10_000
             });
 
-            IRewardsCoordinator.RewardsSubmission memory rewardsSubmission = IRewardsCoordinator.RewardsSubmission({
+            IRewardsCoordinator.RewardsSubmission memory rewardsSubmission = IRewardsCoordinator
+                .RewardsSubmission({
                 strategiesAndMultipliers: strategiesAndMultipliers,
                 token: IStrategy(strategy).underlyingToken(),
                 amount: amountPerPayment,
-                startTimestamp: startTimestamp ,
+                startTimestamp: startTimestamp,
                 duration: duration
             });
 
@@ -55,7 +56,7 @@ library SetupPaymentsLib {
         address strategy
     ) internal {
         PaymentLeaves memory paymentLeaves = parseLeavesFromJson(filePath);
-        
+
         bytes memory proof = generateMerkleProof(paymentLeaves.leaves, indexToProve);
         bytes memory tokenProof = generateMerkleProof(paymentLeaves.tokenLeaves, 0);
 
@@ -63,7 +64,8 @@ library SetupPaymentsLib {
         bytes[] memory tokenProofs = new bytes[](NUM_TOKEN_EARNINGS);
         tokenProofs[0] = tokenProof;
 
-        IRewardsCoordinator.TokenTreeMerkleLeaf[] memory tokenLeaves = new IRewardsCoordinator.TokenTreeMerkleLeaf[](NUM_TOKEN_EARNINGS);
+        IRewardsCoordinator.TokenTreeMerkleLeaf[] memory tokenLeaves =
+            new IRewardsCoordinator.TokenTreeMerkleLeaf[](NUM_TOKEN_EARNINGS);
         tokenLeaves[0] = defaultTokenLeaf(100, strategy);
 
         IRewardsCoordinator.RewardsMerkleClaim memory claim = IRewardsCoordinator.RewardsMerkleClaim({
@@ -85,11 +87,19 @@ library SetupPaymentsLib {
         IRewardsCoordinator.EarnerTreeMerkleLeaf[] memory earnerLeaves,
         address strategy,
         uint32 rewardsCalculationEndTimestamp,
-         uint256 NUM_PAYMENTS,
+        uint256 NUM_PAYMENTS,
         uint256 NUM_TOKEN_EARNINGS,
         string memory filePath
     ) internal {
-        bytes32 paymentRoot = createPaymentRoot(rewardsCoordinator, tokenLeaves, earnerLeaves, NUM_PAYMENTS, NUM_TOKEN_EARNINGS, strategy, filePath);
+        bytes32 paymentRoot = createPaymentRoot(
+            rewardsCoordinator,
+            tokenLeaves,
+            earnerLeaves,
+            NUM_PAYMENTS,
+            NUM_TOKEN_EARNINGS,
+            strategy,
+            filePath
+        );
         rewardsCoordinator.submitRoot(paymentRoot, rewardsCalculationEndTimestamp);
     }
 
@@ -102,10 +112,15 @@ library SetupPaymentsLib {
         address strategy,
         string memory filePath
     ) internal returns (bytes32) {
-        require(earnerLeaves.length == NUM_PAYMENTS, "Number of earners must match number of payments");
+        require(
+            earnerLeaves.length == NUM_PAYMENTS, "Number of earners must match number of payments"
+        );
         bytes32[] memory leaves = new bytes32[](NUM_PAYMENTS);
-        
-        require(tokenLeaves.length == NUM_TOKEN_EARNINGS, "Number of token leaves must match number of token earnings");
+
+        require(
+            tokenLeaves.length == NUM_TOKEN_EARNINGS,
+            "Number of token leaves must match number of token earnings"
+        );
         for (uint256 i = 0; i < NUM_PAYMENTS; i++) {
             leaves[i] = rewardsCoordinator.calculateEarnerLeafHash(earnerLeaves[i]);
         }
@@ -118,7 +133,8 @@ library SetupPaymentsLib {
         address[] calldata earners,
         bytes32[] memory tokenLeaves
     ) public returns (IRewardsCoordinator.EarnerTreeMerkleLeaf[] memory) {
-        IRewardsCoordinator.EarnerTreeMerkleLeaf[] memory leaves = new IRewardsCoordinator.EarnerTreeMerkleLeaf[](earners.length);
+        IRewardsCoordinator.EarnerTreeMerkleLeaf[] memory leaves =
+            new IRewardsCoordinator.EarnerTreeMerkleLeaf[](earners.length);
         for (uint256 i = 0; i < earners.length; i++) {
             leaves[i] = IRewardsCoordinator.EarnerTreeMerkleLeaf({
                 earner: earners[i],
@@ -129,7 +145,7 @@ library SetupPaymentsLib {
     }
 
     function createTokenRoot(bytes32[] memory tokenLeaves) public pure returns (bytes32) {
-        return merkleizeKeccak(tokenLeaves);   
+        return merkleizeKeccak(tokenLeaves);
     }
 
     function createTokenLeaves(
@@ -140,7 +156,8 @@ library SetupPaymentsLib {
     ) internal returns (bytes32[] memory) {
         bytes32[] memory leaves = new bytes32[](NUM_TOKEN_EARNINGS);
         for (uint256 i = 0; i < NUM_TOKEN_EARNINGS; i++) {
-            IRewardsCoordinator.TokenTreeMerkleLeaf memory leaf = defaultTokenLeaf(TOKEN_EARNINGS, strategy);
+            IRewardsCoordinator.TokenTreeMerkleLeaf memory leaf =
+                defaultTokenLeaf(TOKEN_EARNINGS, strategy);
             leaves[i] = rewardsCoordinator.calculateTokenLeafHash(leaf);
         }
         return leaves;
@@ -150,7 +167,8 @@ library SetupPaymentsLib {
         uint256 TOKEN_EARNINGS,
         address strategy
     ) internal view returns (IRewardsCoordinator.TokenTreeMerkleLeaf memory) {
-        IRewardsCoordinator.TokenTreeMerkleLeaf memory leaf = IRewardsCoordinator.TokenTreeMerkleLeaf({
+        IRewardsCoordinator.TokenTreeMerkleLeaf memory leaf = IRewardsCoordinator
+            .TokenTreeMerkleLeaf({
             token: IStrategy(strategy).underlyingToken(),
             cumulativeEarnings: TOKEN_EARNINGS
         });
@@ -174,7 +192,10 @@ library SetupPaymentsLib {
         return abi.decode(data, (PaymentLeaves));
     }
 
-    function generateMerkleProof(bytes32[] memory leaves, uint256 index) internal pure returns (bytes memory) {
+    function generateMerkleProof(
+        bytes32[] memory leaves,
+        uint256 index
+    ) internal pure returns (bytes memory) {
         require(leaves.length > 0, "Leaves array cannot be empty");
         require(index < leaves.length, "Index out of bounds");
 
@@ -256,7 +277,7 @@ library SetupPaymentsLib {
 
     function padLeaves(bytes32[] memory leaves) internal pure returns (bytes32[] memory) {
         uint256 paddedLength = 2;
-        while(paddedLength < leaves.length) {
+        while (paddedLength < leaves.length) {
             paddedLength <<= 1;
         }
 

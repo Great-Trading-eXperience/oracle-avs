@@ -8,53 +8,89 @@ dotenv.config();
 const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
 const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, provider);
 /// TODO: Hack
-let chainId = 421614;
+let chainId = process.env.CHAIN_ID;
 
 const avsDeploymentData = JSON.parse(
 	fs.readFileSync(
 		path.resolve(
 			__dirname,
-			`../contracts/deployments/crediflex/${chainId}.json`
+			`../contracts/deployments/gtxOracle/${chainId}.json`
 		),
 		"utf8"
 	)
 );
-const crediflexServiceManagerAddress =
-	avsDeploymentData.addresses.crediflexServiceManager;
-const crediflexServiceManagerABI = JSON.parse(
+const gtxOracleServiceManagerAddress =
+	avsDeploymentData.addresses.gtxOracleServiceManager;
+const gtxOracleServiceManagerABI = JSON.parse(
 	fs.readFileSync(
-		path.resolve(__dirname, "../abis/CrediflexServiceManager.json"),
+		path.resolve(__dirname, "../abis/GTXOracleServiceManager.json"),
 		"utf8"
 	)
 );
 // Initialize contract objects from ABIs
-const crediflexServiceManager = new ethers.Contract(
-	crediflexServiceManagerAddress,
-	crediflexServiceManagerABI,
+const gtxOracleServiceManager = new ethers.Contract(
+	gtxOracleServiceManagerAddress,
+	gtxOracleServiceManagerABI,
 	wallet
 );
 
-// Function to generate random names
-function generateRandomData(): string {
-	const walletAddresses = [
-		"0xDECAF9CD2367cdbb726E904cD6397eDFcAe6068D", // Ethereum Foundation Donation Address
-		// "0xD8dA6BF26964aF9D7eEd9e03E53415D37aA96045", // Vitalik Buterin's Public Wallet
-		// "0x0000000000000000000000000000000000000000", // Testing or Faucet Address
-		// "0x022bAD9eb609D7F875051217C1C4c6404250C5e7", // Example Address
-		// "0x8757F328371E571308C1271BD82B91882253FDd1", // Example Address
-		// "0x77C037fbF42e85dB1487B390b08f58C00f438812",
+// // Function to generate random names
+function generateRandomData(): any {
+	const oracleSources = [
+		{
+			tokenPair: "ETHUSDT",
+			coingeckoSymbol: "ethereum",
+			binanceSymbol: "ETHUSDT",
+			okxSymbol: "ETH-USDT",
+		},
+		{
+			tokenPair: "TRUMPUSDT",
+			coingeckoSymbol: "official-trump",
+			binanceSymbol: "TRUMPUSDT",
+			okxSymbol: "TRUMP-USDT",
+		},
+		{
+			tokenPair: "PNUTUSDT",
+			coingeckoSymbol: "peanut-the-squirrel",
+			binanceSymbol: "PNUTUSDT",
+			okxSymbol: "PNUT-USDT",
+		},
+		{
+			tokenPair: "FLOKIUSDT",
+			coingeckoSymbol: "floki",
+			binanceSymbol: "FLOKIUSDT",
+			okxSymbol: "FLOKI-USDT",
+		},
 	];
-	const randomWalletAddress =
-		walletAddresses[Math.floor(Math.random() * walletAddresses.length)];
-	return randomWalletAddress;
+	const randomOracleSource =
+		oracleSources[Math.floor(Math.random() * oracleSources.length)];
+	return randomOracleSource;
 }
 
-async function createNewTask(user: string) {
+async function createNewTask(tokenPair: string) {
 	try {
-		// Send a transaction to the createNewTask function
-		const validAddress = ethers.getAddress(user);
-		console.log("valid address:", validAddress);
-		const tx = await crediflexServiceManager.createNewTask(validAddress);
+		const tx = await gtxOracleServiceManager.requestOracleTask(tokenPair);
+		const receipt = await tx.wait();
+
+		console.log(`Transaction successful with hash: ${receipt.hash}`);
+	} catch (error) {
+		console.error("Error sending transaction:", error);
+	}
+}
+
+async function registerOracleTask(
+	tokenPair: string,
+	coingeckoSymbol: string,
+	binanceSymbol: string,
+	okxSymbol: string
+) {
+	try {
+		const tx = await gtxOracleServiceManager.registerOracleSource(
+			tokenPair,
+			coingeckoSymbol,
+			binanceSymbol,
+			okxSymbol
+		);
 
 		// Wait for the transaction to be mined
 		const receipt = await tx.wait();
@@ -66,13 +102,23 @@ async function createNewTask(user: string) {
 }
 
 // Function to create a new task with a random name every 15 seconds
-function startCreatingTasks() {
+async function startCreatingTasks() {
 	const randomData = generateRandomData();
-	console.log(
-		`Creating new task to calculte CScore for address: ${randomData}`
+	console.log(`Creating new task for request oracle price`);
+	console.log(JSON.stringify(randomData, null, 2));
+
+	const { tokenPair, coingeckoSymbol, binanceSymbol, okxSymbol } = randomData;
+
+	await registerOracleTask(
+		tokenPair,
+		coingeckoSymbol,
+		binanceSymbol,
+		okxSymbol
 	);
-	createNewTask(randomData);
-	// checkCScore(randomData);
+
+	await createNewTask(tokenPair);
+
+	// await checkPrice(tokenPair);
 
 	// Uncomment this to create tasks every 30 seconds
 	// setInterval(() => {
@@ -80,18 +126,26 @@ function startCreatingTasks() {
 	// 	console.log(
 	// 		`Creating new task to calculte CScore for address: ${randomData}`
 	// 	);
-	// 	createNewTask(randomData);
+
+	// 	const { tokenPair, coingeckoSymbol, binanceSymbol, okxSymbol } = randomData;
+
+	// 	registerOracleTask(tokenPair, coingeckoSymbol, binanceSymbol, okxSymbol);
+	// 	createNewTask(tokenPair);
+	// 	checkPrice(tokenPair);
 	// }, 30000);
 }
 
-async function checkCScore(user: string) {
+async function checkPrice(tokenPair: string) {
 	try {
-		const result = await crediflexServiceManager.getUserCScoreData(user);
-		console.log("CScore for user:", user, "is", result);
+		const result = await gtxOracleServiceManager.getOraclePriceData(tokenPair);
+		console.log("Price :", tokenPair, "is", result);
 	} catch (error) {
-		console.error("Error fetching CScore for user:", user, error);
+		console.error("Error fetching Price :", tokenPair, error);
 	}
 }
 
-// Start the process
-startCreatingTasks();
+startCreatingTasks().catch((error) => {
+	console.error("Error in startCreatingTasks:", error);
+});
+
+// checkPrice("ETHUSDT");
