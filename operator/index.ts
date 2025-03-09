@@ -88,39 +88,44 @@ const avsDirectory = new ethers.Contract(
 
 const signAndRespondToTask = async (
 	taskIndex: number,
-	task: [string, bigint, [string, string, string]]
+	task: [string, number, [string, string, string][], boolean]
 ) => {
-	const [coingeckoSymbol, binanceSymbol, okxSymbol] = task[2];
+	const [tokenPair, taskCreatedBlock, sources, isNewData] = task;
+	const sourcesArray: { name: string; identifier: string; network: string }[] =
+		new Array(sources.length);
+
 	console.log(`Processing Task #${taskIndex}...`);
+	const validProofs: any[] = [];
+	for (let index = 0; index < sources.length; index++) {
+		const [name, identifier, network] = sources[index];
+		const proof = await generateProof(
+			tokenPair,
+			name as any,
+			identifier,
+			network
+		);
+		sourcesArray[index] = { name, identifier, network };
 
-	const coingeckoProof = await generateProof("coingecko", coingeckoSymbol);
-	// console.log(coingeckoProof);
+		if (proof) {
+			validProofs.push(proof);
+		}
+	}
 
-	const binanceProof = await generateProof("binance", binanceSymbol);
-	// console.log(binanceProof);
-
-	const okxProof = await generateProof("okx", okxSymbol);
-	// console.log(okxProof);
-
-	if (!coingeckoProof || !binanceProof || !okxProof) {
+	if (!validProofs.length) {
 		console.log("Failed to generate proofs for one or more sources.");
 		return;
 	}
-	const validProofs = [coingeckoProof, binanceProof, okxProof].filter(
-		(proof) => proof
-	);
-	const validProof = validProofs.length > 0 ? validProofs[0] : null;
 
-	const avgPrice = calculateAvgPrice([
-		coingeckoProof.proof,
-		binanceProof.proof,
-		okxProof.proof,
-	]);
+	// validProofs.map((el) =>
+	// 	console.log(JSON.stringify(el.proof.extractedParameterValues, null, 2))
+	// );
+	// return;
 
-	console.log(`Average price for task #${task[0]}:`, avgPrice.toString());
+	const avgPrice = calculateAvgPrice(validProofs);
 
-	const message =
-		"Hello, this is a signed message from the GTX Oracle Service Manager.";
+	console.log(`Average price for #${task[0]}:`, avgPrice.toString());
+
+	const message = "GTX Oracle Service Manager.";
 	const messageHash = ethers.solidityPackedKeccak256(["string"], [message]);
 	const messageBytes = ethers.getBytes(messageHash);
 	const signature = await wallet.signMessage(messageBytes);
@@ -137,22 +142,22 @@ const signAndRespondToTask = async (
 			ethers.toBigInt((await provider.getBlockNumber()) - 1),
 		]
 	);
+	const proof = validProofs[0].transformedProof;
 	const params = {
-		tokenPair: task[0],
-		taskCreatedBlock: task[1],
-		source: {
-			coingeckoSymbol: task[2][0],
-			binanceSymbol: task[2][1],
-			okxSymbol: task[2][2],
-		},
+		tokenPair,
+		taskCreatedBlock,
+		sources: sourcesArray,
+		isNewData,
 	};
+
+	// console.log("params", params);
 
 	const tx = await gtxOracleServiceManager.respondToOracleTask(
 		params,
 		avgPrice,
 		taskIndex,
 		signedTask,
-		validProof.transformedProof
+		proof
 	);
 	await tx.wait();
 	console.log(`Responded to task...`);
@@ -217,7 +222,7 @@ export const monitorNewTasks = async () => {
 	gtxOracleServiceManager.on(
 		"NewOracleTaskCreated",
 		async (taskIndex: number, task: any) => {
-			console.log(taskIndex, task);
+			// console.log(taskIndex, task);
 			console.log(`New task detected: Task, #${taskIndex}`);
 			await signAndRespondToTask(taskIndex, task);
 		}

@@ -9,50 +9,73 @@ const reclaimClient = new ReclaimClient(
 );
 
 const sourceMappings = {
-	coingecko: {
-		url: (token: string) =>
-			`https://api.coingecko.com/api/v3/simple/price?ids=${token}&vs_currencies=usd`,
-		responseMatches: (token: string) => [
-			{
-				type: "regex",
-				value: `${token}":{"usd":(?<price>.*?)}}`,
-			},
+	geckoterminal: {
+		url: (tokenAddress: string, network: string) =>
+			`https://api.geckoterminal.com/api/v2/networks/${network}/tokens/${tokenAddress}`,
+		responseMatches: (basePattern: string) => [
+			createGeckoTerminalRegex(basePattern),
+		],
+	},
+	dexscreener: {
+		url: (tokenAddress: string, chainId: string) =>
+			`https://api.dexscreener.com/tokens/v1/${chainId}/${tokenAddress}`,
+		responseMatches: (basePattern: string) => [
+			createDexscreenerRegex(basePattern),
 		],
 	},
 	binance: {
 		url: (symbol: string) =>
 			`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`,
-		responseMatches: (symbol: string) => [
-			{
-				type: "regex",
-				value: `"symbol":"${symbol}","price":"(?<price>.*?)"`,
-			},
+		responseMatches: (basePattern: string, quotePattern: string) => [
+			createBinanceRegex(basePattern, quotePattern),
 		],
 	},
 	okx: {
 		url: (instId: string) =>
 			`https://www.okx.com/api/v5/market/ticker?instId=${instId}`,
-		responseMatches: (instId: string) => [
-			{
-				type: "regex",
-				value: `"instId":"${instId}","last":"(?<price>.*?)",`,
-			},
+		responseMatches: (basePattern: string, quotePattern: string) => [
+			createOkxRegex(basePattern, quotePattern),
 		],
 	},
 };
+// jupiter: {
+// 	url: (id: string) => `https://api.jup.ag/price/v2?ids=${id}`,
+// 	responseMatches: (id: string) => [
+// 		{
+// 			type: "regex",
+// 			value: `"${id}":\\{"id":"${id}","type":"derivedPrice","price":"(?<price>.*?)"`,
+// 		},
+// 	],
+// },
+// coingecko: {
+// 	url: (token: string) =>
+// 		`https://api.coingecko.com/api/v3/simple/price?ids=${token}&vs_currencies=usd`,
+// 	responseMatches: (token: string) => [
+// 		{
+// 			type: "regex",
+// 			value: `${token}":{"usd":(?<price>.*?)}}`,
+// 		},
+// 	],
+// },
 
 export async function generateProof(
-	source: "coingecko" | "binance" | "okx",
-	input: string
+	tokenPair: string,
+	source: "binance" | "okx" | "geckoterminal" | "dexscreener",
+	identifier: string,
+	network: string
 ): Promise<any> {
 	try {
+		const { basePattern, quotePattern } = tokenPairPattern(tokenPair);
 		const sourceConfig = sourceMappings[source];
 		if (!sourceConfig) {
 			throw new Error("Unsupported source");
 		}
 
-		const url = sourceConfig.url(input);
-		const responseMatches: any[] = sourceConfig.responseMatches(input);
+		const url = sourceConfig.url(identifier, network);
+		const responseMatches: any[] = sourceConfig.responseMatches(
+			basePattern,
+			quotePattern
+		);
 
 		const proof = await reclaimClient.zkFetch(
 			url,
@@ -79,4 +102,51 @@ export async function generateProof(
 		console.error(e);
 		return null;
 	}
+}
+
+function tokenPairPattern(tokenPair: string) {
+	const [baseToken, quoteToken] = tokenPair.split("/");
+	if (!["USDT", "USDC"].includes(quoteToken)) {
+		throw new Error("Unsupported quote token");
+	}
+
+	let baseTokens = [baseToken];
+	if (baseToken.startsWith("W")) {
+		const unwrappedToken = baseToken.slice(1);
+		baseTokens.push(unwrappedToken);
+	} else {
+		baseTokens.push(`W${baseToken}`);
+	}
+	const basePattern = baseTokens.join("|");
+	const quotePattern = ["USDT", "USDC"].join("|");
+
+	return { basePattern, quotePattern };
+}
+
+function createDexscreenerRegex(basePattern: string) {
+	return {
+		type: "regex",
+		value: `"baseToken":\\s*\\{[^}]*"symbol":"(?<symbol>(${basePattern}))".*?"priceUsd":"(?<price>[^"]+)"`,
+	};
+}
+
+function createGeckoTerminalRegex(basePattern: string) {
+	return {
+		type: "regex",
+		value: `"symbol":"(?<symbol>(${basePattern}))".*?"price_usd":"(?<price>[^"]+)"`,
+	};
+}
+
+function createBinanceRegex(basePattern: string, quotePattern: string) {
+	return {
+		type: "regex",
+		value: `"symbol":"(?<symbol>(${basePattern})(${quotePattern}))","price":"(?<price>[^"]+)"`,
+	};
+}
+
+function createOkxRegex(basePattern: string, quotePattern: string) {
+	return {
+		type: "regex",
+		value: `"instId":"(?<instId>(${basePattern})-(${quotePattern}))","last":"(?<price>[^"]+)"`,
+	};
 }
