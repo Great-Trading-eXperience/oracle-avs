@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
+// solhint-disable
 
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import {TransparentUpgradeableProxy} from
@@ -379,7 +380,9 @@ library CoreDeploymentLib {
     }
 
     /// TODO: Need to be able to read json from eigenlayer-contracts repo for holesky/mainnet and output the json here
-    function writeDeploymentJson(DeploymentData memory data) internal {
+    function writeDeploymentJson(
+        DeploymentData memory data
+    ) internal {
         writeDeploymentJson("deployments/core/", block.chainid, data);
     }
 

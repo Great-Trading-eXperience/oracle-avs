@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
+// solhint-disable
 import {Script} from "forge-std/Script.sol";
 import {GTXOracleDeploymentLib} from "./utils/GTXOracleDeploymentLib.sol";
 import {CoreDeploymentLib} from "./utils/CoreDeploymentLib.sol";

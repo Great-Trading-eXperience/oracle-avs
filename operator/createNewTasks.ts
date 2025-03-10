@@ -171,12 +171,14 @@ async function startCreatingTasks() {
 
 	const { tokenPair, sources } = randomData;
 
-	const price = await checkPrice(tokenPair);
+	const existinsSources = await checkSource(tokenPair);
 
-	if (price != 0) {
-		await createNewTask(tokenPair);
-	} else {
+	console.log("source", existinsSources);
+
+	if (!existinsSources) {
 		await requestNewOracleTask(tokenPair, sources);
+	} else {
+		await createNewTask(tokenPair);
 	}
 
 	// Uncomment this to create tasks every 30 seconds
@@ -190,14 +192,14 @@ async function startCreatingTasks() {
 
 	// 	registerOracleTask(tokenPair, geckoterminalSymbol, binanceSymbol, okxSymbol);
 	// 	createNewTask(tokenPair);
-	// 	checkPrice(tokenPair);
+	// 	checkSource(tokenPair);
 	// }, 30000);
 }
 
-async function checkPrice(tokenPair: string) {
+async function checkSource(tokenPair: string) {
 	try {
-		const result = await gtxOracleServiceManager.getPrice(tokenPair);
-		console.log("Price :", tokenPair, "is", result);
+		const result = await gtxOracleServiceManager.getSources(tokenPair);
+		console.log("Sources of", tokenPair, "is", result);
 		return result;
 	} catch (error) {
 		console.error("Error fetching Price :", tokenPair, error);
@@ -208,4 +210,4 @@ startCreatingTasks().catch((error) => {
 	console.error("Error in startCreatingTasks:", error);
 });
 
-// checkPrice("ETHUSDT");
+// checkSource("ETHUSDT");

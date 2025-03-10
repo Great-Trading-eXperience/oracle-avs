@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
+// solhint-disable
 
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 import {TransparentUpgradeableProxy} from
@@ -36,8 +37,9 @@ library GTXOracleDeploymentLib {
         Quorum memory quorum
     ) internal returns (DeploymentData memory) {
         DeploymentData memory result;
-        uint256 minBlockInterval = vm.envUint("MIN_BLOCK_INTERVAL");
-        uint256 maxBlockInterval = vm.envUint("MAX_BLOCK_INTERVAL");
+        uint256 minBlockInterval = uint256(vm.envUint("MIN_BLOCK_INTERVAL"));
+        uint256 maxBlockInterval = uint256(vm.envUint("MAX_BLOCK_INTERVAL"));
+        console2.log("block interval", minBlockInterval, maxBlockInterval);
 
         // First, deploy upgradeable proxy contracts that will point to the implementations.
         result.gtxOracleServiceManager = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
