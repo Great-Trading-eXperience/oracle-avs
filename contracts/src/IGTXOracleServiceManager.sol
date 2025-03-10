@@ -11,8 +11,10 @@ interface IGTXOracleServiceManager {
     error InvalidClaimOwner();
     // error InsufficientSigners();
     error InvalidToken();
-    error SourcesAlreadyExist(string tokenPair);
-    error SourcesEmpty(string tokenPair);
+    // error SourcesAlreadyExist(string tokenPair);
+    // error SourcesEmpty();
+    error SourcesAlreadyExist(address token);
+    error SourcesEmpty(address token);
     error PriceDeviationTooLarge();
     error SuppliedTaskMismatch();
     error OperatorAlreadyResponded(uint256 id, address operator);
@@ -22,14 +24,21 @@ interface IGTXOracleServiceManager {
     event OracleTaskResponded(
         uint32 indexed taskIndex, OracleTask task, address operator, bytes signature
     );
-    event OraclePriceUpdated(string indexed tokenPair, uint256 price, uint256 timestamp);
-    event OracleSourceCreated(string indexed tokenPair, Source[] sources, address operator);
+    // event OraclePriceUpdated(string indexed tokenPair, uint256 price, uint256 timestamp);
+    // event OracleSourceCreated(string indexed tokenPair, Source[] sources, address operator);
+    event OraclePriceUpdated(
+        address indexed tokenAddress, string indexed tokenPair, uint256 price, uint256 timestamp
+    );
+    event OracleSourceCreated(
+        address indexed tokenAddress, string indexed tokenPair, Source[] sources, address operator
+    );
 
     struct OracleTask {
-        string tokenPair;
+        address tokenAddress; // used by current perpetual
         uint32 taskCreatedBlock;
-        Source[] sources;
         bool isNewData; // True for new data, False for updating existing data
+        string tokenPair;
+        Source[] sources;
     }
 
     struct Source {
@@ -58,12 +67,13 @@ interface IGTXOracleServiceManager {
     ) external view returns (bytes memory);
 
     function requestNewOracleTask(
+        address _tokenAddress,
         string calldata _tokenPair,
         Source[] calldata _sources
     ) external returns (uint32 taskIndex);
 
     function requestOraclePriceTask(
-        string calldata _tokenPair
+        address _tokenAddress // string calldata _tokenPair
     ) external returns (uint32 taskIndex);
 
     function respondToOracleTask(
@@ -75,10 +85,10 @@ interface IGTXOracleServiceManager {
     ) external;
 
     function getPrice(
-        string calldata _tokenPair
+        address _tokenAddress // string calldata _tokenPair
     ) external view returns (uint256);
 
     function getSources(
-        string calldata _tokenPair
+        address _tokenAddress // string calldata _tokenPair
     ) external view returns (Source[] memory);
 }

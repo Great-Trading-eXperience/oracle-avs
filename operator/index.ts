@@ -89,9 +89,9 @@ const avsDirectory = new ethers.Contract(
 
 const signAndRespondToTask = async (
 	taskIndex: number,
-	task: [string, number, [string, string, string][], boolean]
+	task: [string, number, boolean, string, [string, string, string][]]
 ) => {
-	const [tokenPair, taskCreatedBlock, sources, isNewData] = task;
+	const [tokenAddress, taskCreatedBlock, isNewData, tokenPair, sources] = task;
 	const sourcesArray: { name: string; identifier: string; network: string }[] =
 		new Array(sources.length);
 
@@ -145,6 +145,7 @@ const signAndRespondToTask = async (
 	);
 	const proof = validProofs[0].transformedProof;
 	const params = {
+		tokenAddress,
 		tokenPair,
 		taskCreatedBlock,
 		sources: sourcesArray,
@@ -235,7 +236,7 @@ export const monitorNewTasks = async () => {
 	console.log("Monitoring for new tasks...");
 
 	const eventTopic = ethers.id(
-		"NewOracleTaskCreated(uint32,(string,uint32,(string,string,string)[],bool))"
+		"NewOracleTaskCreated(uint32,(address,uint32,bool,string,(string,string,string)[]))"
 	);
 	let latestBlock = await provider.getBlockNumber(); // Track last block
 	let isFetching = false;

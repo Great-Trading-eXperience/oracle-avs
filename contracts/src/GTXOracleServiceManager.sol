@@ -34,8 +34,14 @@ contract GTXOracleServiceManager is ECDSAServiceManagerBase, IGTXOracleServiceMa
     mapping(uint32 => bytes32) public allTaskHashes;
     mapping(address => mapping(uint32 => bytes)) public allTaskResponses;
 
-    mapping(string tokenPair => Price) public prices;
-    mapping(string tokenPair => Source[]) public sources;
+    mapping(address tokenAddress => Price) public prices;
+    mapping(address tokenAddress => Source[]) public sources;
+    // use for this
+    mapping(address tokenAddress => string tokenPair) public pairs;
+
+    // update for next version
+    // mapping(string tokenPair => Price) public prices;
+    // mapping(string tokenPair => Source[]) public sources;
 
     modifier onlyOperator() {
         require(
@@ -60,20 +66,28 @@ contract GTXOracleServiceManager is ECDSAServiceManagerBase, IGTXOracleServiceMa
     }
 
     function requestNewOracleTask(
+        address _tokenAddress,
         string calldata _tokenPair,
         Source[] memory _sources
     ) external returns (uint32 taskId) {
-        if (bytes(_tokenPair).length == 0) {
+        // if (bytes(_tokenPair).length == 0) {
+        //     revert InvalidToken();
+        // }
+        // if (sources[_tokenPair].length != 0) {
+        //     revert SourcesAlreadyExist(_tokenPair);
+        // }
+        if (_tokenAddress == address(0)) {
             revert InvalidToken();
         }
-        if (sources[_tokenPair].length != 0) {
-            revert SourcesAlreadyExist(_tokenPair);
+        if (sources[_tokenAddress].length != 0) {
+            revert SourcesAlreadyExist(_tokenAddress);
         }
         if (_sources.length == 0) {
-            revert SourcesEmpty(_tokenPair);
+            revert SourcesEmpty(_tokenAddress);
         }
 
         OracleTask memory newTask;
+        newTask.tokenAddress = _tokenAddress;
         newTask.tokenPair = _tokenPair;
         newTask.taskCreatedBlock = uint32(block.number);
         newTask.isNewData = true;
@@ -87,19 +101,33 @@ contract GTXOracleServiceManager is ECDSAServiceManagerBase, IGTXOracleServiceMa
     }
 
     function requestOraclePriceTask(
-        string calldata _tokenPair
-    ) external returns (uint32 taskId) {
-        if (bytes(_tokenPair).length == 0) {
+        address _tokenAddress
+    )
+        external
+        returns (
+            // string calldata _tokenPair
+            uint32 taskId
+        )
+    {
+        // if (bytes(_tokenPair).length == 0) {
+        //     revert InvalidToken();
+        // }
+        // if (sources[_tokenPair].length == 0) {
+        //     revert SourcesEmpty(_tokenPair);
+        // }
+        if (_tokenAddress == address(0)) {
             revert InvalidToken();
         }
-        if (sources[_tokenPair].length == 0) {
-            revert SourcesEmpty(_tokenPair);
+        if (sources[_tokenAddress].length == 0) {
+            revert SourcesEmpty(_tokenAddress);
         }
 
         OracleTask memory newTask;
-        newTask.tokenPair = _tokenPair;
+        newTask.tokenAddress = _tokenAddress;
+        newTask.tokenPair = pairs[_tokenAddress];
         newTask.taskCreatedBlock = uint32(block.number);
-        newTask.sources = sources[_tokenPair];
+        newTask.sources = sources[_tokenAddress];
+        // newTask.sources = sources[_tokenPair];
 
         // store hash of task onchain, emit event, and increase taskNum
         allTaskHashes[latestTaskNum] = keccak256(abi.encode(newTask));
@@ -134,24 +162,25 @@ contract GTXOracleServiceManager is ECDSAServiceManagerBase, IGTXOracleServiceMa
         //                 ethSignedMessageHash, signature
         //             )
         //     )
-        // ) {
+        // )
         //     revert InvalidSignature();
         // }
         if (proof.signedClaim.claim.owner != CLAIM_OWNER) {
             revert InvalidClaimOwner();
         }
 
-        _validateBlockInterval(task.taskCreatedBlock, prices[task.tokenPair].blockNumber);
-        _validatePrice(task.tokenPair, _price, block.timestamp);
+        // _validateBlockInterval(task.taskCreatedBlock, prices[task.tokenPair].blockNumber);
+        _validatePrice(task.tokenAddress, _price, block.timestamp);
 
         allTaskResponses[msg.sender][referenceTaskIndex] = signature;
 
-        if (task.isNewData == true && sources[task.tokenPair].length == 0) {
-            sources[task.tokenPair] = task.sources;
-            emit OracleSourceCreated(task.tokenPair, task.sources, msg.sender);
+        if (task.isNewData == true && sources[task.tokenAddress].length == 0) {
+            sources[task.tokenAddress] = task.sources;
+            pairs[task.tokenAddress] = task.tokenPair;
+            emit OracleSourceCreated(task.tokenAddress, task.tokenPair, task.sources, msg.sender);
         }
 
-        prices[task.tokenPair] = Price({
+        prices[task.tokenAddress] = Price({
             value: _price,
             timestamp: block.timestamp,
             blockNumber: task.taskCreatedBlock,
@@ -160,7 +189,7 @@ contract GTXOracleServiceManager is ECDSAServiceManagerBase, IGTXOracleServiceMa
         });
 
         // emitting event
-        emit OraclePriceUpdated(task.tokenPair, _price, block.timestamp);
+        emit OraclePriceUpdated(task.tokenAddress, task.tokenPair, _price, block.timestamp);
         emit OracleTaskResponded(
             referenceTaskIndex, task, msg.sender, proof.signedClaim.signatures[0]
         );
@@ -189,11 +218,13 @@ contract GTXOracleServiceManager is ECDSAServiceManagerBase, IGTXOracleServiceMa
     }
 
     function _validatePrice(
-        string calldata _tokenPair,
+        address _tokenAddress,
+        // string calldata _tokenPair,
         uint256 newPrice,
         uint256 timestamp
     ) internal view {
-        Price memory currentPrice = prices[_tokenPair];
+        // Price memory currentPrice = prices[_tokenPair];
+        Price memory currentPrice = prices[_tokenAddress];
 
         // Restore stale price checks
         if (timestamp <= currentPrice.timestamp) revert StalePrice();
@@ -217,17 +248,35 @@ contract GTXOracleServiceManager is ECDSAServiceManagerBase, IGTXOracleServiceMa
     }
 
     function getPrice(
-        string calldata _tokenPair
-    ) external view returns (uint256) {
-        Price memory price = prices[_tokenPair];
+        address _tokenAddress
+    )
+        external
+        view
+        returns (
+            // string calldata _tokenPair
+            uint256
+        )
+    {
+        // Price memory price = prices[_tokenPair];
+        Price memory price = prices[_tokenAddress];
         if (price.value == 0) revert InvalidPrice();
-        if (block.timestamp - price.timestamp > MAX_PRICE_AGE) revert StalePrice();
+        if (block.timestamp - price.timestamp > MAX_PRICE_AGE) {
+            revert StalePrice();
+        }
         return price.value;
     }
 
     function getSources(
-        string calldata _tokenPair
-    ) external view returns (Source[] memory) {
-        return sources[_tokenPair];
+        address _tokenAddress
+    )
+        external
+        view
+        returns (
+            // string calldata _tokenPair
+            Source[] memory
+        )
+    {
+        // return sources[_tokenPair];
+        return sources[_tokenAddress];
     }
 }
