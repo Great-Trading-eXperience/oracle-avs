@@ -245,9 +245,9 @@
     "name": "getPrice",
     "inputs": [
       {
-        "name": "_tokenPair",
-        "type": "string",
-        "internalType": "string"
+        "name": "_tokenAddress",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "outputs": [
@@ -277,9 +277,9 @@
     "name": "getSources",
     "inputs": [
       {
-        "name": "_tokenPair",
-        "type": "string",
-        "internalType": "string"
+        "name": "_tokenAddress",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "outputs": [
@@ -362,12 +362,31 @@
   },
   {
     "type": "function",
-    "name": "prices",
+    "name": "pairs",
     "inputs": [
+      {
+        "name": "tokenAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
       {
         "name": "tokenPair",
         "type": "string",
         "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "prices",
+    "inputs": [
+      {
+        "name": "tokenAddress",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "outputs": [
@@ -446,6 +465,11 @@
     "name": "requestNewOracleTask",
     "inputs": [
       {
+        "name": "_tokenAddress",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
         "name": "_tokenPair",
         "type": "string",
         "internalType": "string"
@@ -487,9 +511,9 @@
     "name": "requestOraclePriceTask",
     "inputs": [
       {
-        "name": "_tokenPair",
-        "type": "string",
-        "internalType": "string"
+        "name": "_tokenAddress",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "outputs": [
@@ -511,14 +535,24 @@
         "internalType": "struct IGTXOracleServiceManager.OracleTask",
         "components": [
           {
-            "name": "tokenPair",
-            "type": "string",
-            "internalType": "string"
+            "name": "tokenAddress",
+            "type": "address",
+            "internalType": "address"
           },
           {
             "name": "taskCreatedBlock",
             "type": "uint32",
             "internalType": "uint32"
+          },
+          {
+            "name": "isNewData",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "tokenPair",
+            "type": "string",
+            "internalType": "string"
           },
           {
             "name": "sources",
@@ -541,11 +575,6 @@
                 "internalType": "string"
               }
             ]
-          },
-          {
-            "name": "isNewData",
-            "type": "bool",
-            "internalType": "bool"
           }
         ]
       },
@@ -667,9 +696,9 @@
     "name": "sources",
     "inputs": [
       {
-        "name": "tokenPair",
-        "type": "string",
-        "internalType": "string"
+        "name": "tokenAddress",
+        "type": "address",
+        "internalType": "address"
       },
       {
         "name": "",
@@ -765,14 +794,24 @@
         "internalType": "struct IGTXOracleServiceManager.OracleTask",
         "components": [
           {
-            "name": "tokenPair",
-            "type": "string",
-            "internalType": "string"
+            "name": "tokenAddress",
+            "type": "address",
+            "internalType": "address"
           },
           {
             "name": "taskCreatedBlock",
             "type": "uint32",
             "internalType": "uint32"
+          },
+          {
+            "name": "isNewData",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "tokenPair",
+            "type": "string",
+            "internalType": "string"
           },
           {
             "name": "sources",
@@ -795,11 +834,6 @@
                 "internalType": "string"
               }
             ]
-          },
-          {
-            "name": "isNewData",
-            "type": "bool",
-            "internalType": "bool"
           }
         ]
       }
@@ -810,6 +844,12 @@
     "type": "event",
     "name": "OraclePriceUpdated",
     "inputs": [
+      {
+        "name": "tokenAddress",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
       {
         "name": "tokenPair",
         "type": "string",
@@ -835,6 +875,12 @@
     "type": "event",
     "name": "OracleSourceCreated",
     "inputs": [
+      {
+        "name": "tokenAddress",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
       {
         "name": "tokenPair",
         "type": "string",
@@ -890,14 +936,24 @@
         "internalType": "struct IGTXOracleServiceManager.OracleTask",
         "components": [
           {
-            "name": "tokenPair",
-            "type": "string",
-            "internalType": "string"
+            "name": "tokenAddress",
+            "type": "address",
+            "internalType": "address"
           },
           {
             "name": "taskCreatedBlock",
             "type": "uint32",
             "internalType": "uint32"
+          },
+          {
+            "name": "isNewData",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "tokenPair",
+            "type": "string",
+            "internalType": "string"
           },
           {
             "name": "sources",
@@ -920,11 +976,6 @@
                 "internalType": "string"
               }
             ]
-          },
-          {
-            "name": "isNewData",
-            "type": "bool",
-            "internalType": "bool"
           }
         ]
       },
@@ -1048,9 +1099,9 @@
     "name": "SourcesAlreadyExist",
     "inputs": [
       {
-        "name": "tokenPair",
-        "type": "string",
-        "internalType": "string"
+        "name": "token",
+        "type": "address",
+        "internalType": "address"
       }
     ]
   },
@@ -1059,9 +1110,9 @@
     "name": "SourcesEmpty",
     "inputs": [
       {
-        "name": "tokenPair",
-        "type": "string",
-        "internalType": "string"
+        "name": "token",
+        "type": "address",
+        "internalType": "address"
       }
     ]
   },
