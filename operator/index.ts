@@ -13,6 +13,7 @@ if (!Object.keys(process.env).length) {
 
 // Setup env variables
 const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+// const provider = new ethers.WebSocketProvider(process.env.WS_RPC_URL!);
 const wallet = new ethers.Wallet(process.env.PRIVATE_KEY!, provider);
 /// TODO: Hack
 let chainId = process.env.CHAIN_ID!;
@@ -216,49 +217,75 @@ const registerOperator = async () => {
 	console.log("Operator registered on AVS successfully");
 };
 
+// export const monitorNewTasks = async () => {
+// 	console.log("Monitoring for new tasks...");
+
+// 	gtxOracleServiceManager.on(
+// 		"NewOracleTaskCreated",
+// 		async (taskIndex: number, task: any) => {
+// 			// console.log(taskIndex, task);
+// 			console.log(`New task detected: Task, #${taskIndex}`);
+// 			await signAndRespondToTask(taskIndex, task);
+// 		}
+// 	);
+// };
+
+// Use this because method: 'eth_newFilter' not found
 export const monitorNewTasks = async () => {
 	console.log("Monitoring for new tasks...");
 
-	gtxOracleServiceManager.on(
-		"NewOracleTaskCreated",
-		async (taskIndex: number, task: any) => {
-			// console.log(taskIndex, task);
-			console.log(`New task detected: Task, #${taskIndex}`);
-			await signAndRespondToTask(taskIndex, task);
-		}
+	const eventTopic = ethers.id(
+		"NewOracleTaskCreated(uint32,(string,uint32,(string,string,string)[],bool))"
 	);
+	let latestBlock = await provider.getBlockNumber(); // Track last block
+	let isFetching = false;
+	const taskQueue = new Set();
+	const processedTasks = new Set();
+
+	const fetchEvents = async () => {
+		if (isFetching) return;
+		isFetching = true;
+
+		try {
+			const newBlock = await provider.getBlockNumber();
+			if (newBlock <= latestBlock) return;
+
+			const logs = await provider.getLogs({
+				address: gtxOracleServiceManagerAddress,
+				fromBlock: latestBlock + 1,
+				toBlock: newBlock,
+				topics: [eventTopic],
+			});
+
+			for (const log of logs) {
+				const parsedLog = gtxOracleServiceManager.interface.parseLog(log);
+				if (!parsedLog) continue;
+
+				const taskIndex = parsedLog.args[0];
+				const task = parsedLog.args[1];
+
+				if (taskQueue.has(taskIndex) || processedTasks.has(taskIndex)) continue;
+
+				taskQueue.add(taskIndex);
+				console.log(`Processing Task #${taskIndex}...`);
+
+				await signAndRespondToTask(taskIndex, task);
+				processedTasks.add(taskIndex);
+				taskQueue.delete(taskIndex);
+			}
+
+			latestBlock = newBlock;
+		} catch (error) {
+			console.error("Error fetching logs:", error);
+		} finally {
+			isFetching = false;
+			processedTasks.clear();
+		}
+	};
+
+	// Poll every 5 seconds
+	setInterval(fetchEvents, 10000);
 };
-
-// export const processNewTasksByLastEvent = async () => {
-// 	console.log("Checking for the latest NewTaskCreated event...");
-
-// 	try {
-// 		const latestBlock = await provider.getBlockNumber();
-// 		const filter = gtxOracleServiceManager.filters.NewTaskCreated();
-// 		const logs = await gtxOracleServiceManager.queryFilter(
-// 			filter,
-// 			latestBlock - 1000,
-// 			latestBlock
-// 		);
-
-// 		if (logs.length === 0) {
-// 			console.log("No new tasks found.");
-// 			return;
-// 		}
-
-// 		const latestEvent = logs[logs.length - 1];
-// 		const args = (latestEvent as any).args;
-
-// 		if (args && args[0] !== undefined) {
-// 			console.log(`Processing NewTaskCreated event: Task #${args[0]}`);
-// 			await signAndRespondToTask(args[0], args[1]);
-// 		} else {
-// 			console.error("Event args are missing or malformed.");
-// 		}
-// 	} catch (error) {
-// 		console.error("Error fetching or processing events:", error);
-// 	}
-// };
 
 const main = async () => {
 	// await registerOperator();

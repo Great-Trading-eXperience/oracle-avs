@@ -1,25 +1,19 @@
-// import { processNewTasksByLastEvent } from "./operator";
-// import * as dotenv from "dotenv";
-// import express from "express";
+const ethers = require("ethers");
 
-// dotenv.config();
+const errors = [
+	"InvalidPrice()",
+	"StalePrice()",
+	"InvalidSignature()",
+	"InvalidClaimOwner()",
+	"InvalidToken()",
+	"SourcesAlreadyExist(string)",
+	"SourcesEmpty(string)",
+	"PriceDeviationTooLarge()",
+	"SuppliedTaskMismatch()",
+	"OperatorAlreadyResponded(uint256,address)",
+	"BlockIntervalInvalid(uint256,uint256,uint256)",
+];
 
-// const app = express();
-// const PORT: number = 3000;
-
-// app.use(express.json()); // Middleware to parse JSON payloads
-
-// app.get("/", (_, res) => {
-// 	res.send("Welcome to GTXOracle AVS!");
-// });
-
-// app.get("/process", async (_, res) => {
-// 	await processNewTasksByLastEvent();
-// 	res.send("Data processed successfully");
-// });
-
-// // Start the server and monitor tasks on server startup
-// app.listen(PORT, async () => {
-// 	console.log(`Server is running on http://localhost:${PORT}`);
-// 	// monitorNewTasks(); // Start monitoring when the server starts
-// });
+errors.forEach((error) => {
+	console.log(`${error}: ${ethers.id(error).slice(0, 10)}`);
+});
