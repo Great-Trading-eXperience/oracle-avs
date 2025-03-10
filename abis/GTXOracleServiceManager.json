@@ -21,19 +21,81 @@
         "name": "_delegationManager",
         "type": "address",
         "internalType": "address"
+      },
+      {
+        "name": "_minBlockInterval",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_maxBlockInterval",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "nonpayable"
   },
   {
     "type": "function",
-    "name": "OWNER_ADDRESS",
+    "name": "CLAIM_OWNER",
     "inputs": [],
     "outputs": [
       {
         "name": "",
         "type": "address",
         "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MAX_PRICE_AGE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MAX_PRICE_DEVIATION",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "PRICE_PRECISION",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "SCALING_FACTOR",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -180,73 +242,6 @@
   },
   {
     "type": "function",
-    "name": "getOraclePriceData",
-    "inputs": [
-      {
-        "name": "_tokenPair",
-        "type": "string",
-        "internalType": "string"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "tuple",
-        "internalType": "struct IGTXOracleServiceManager.OraclePriceData",
-        "components": [
-          {
-            "name": "price",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "lastUpdate",
-            "type": "uint256",
-            "internalType": "uint256"
-          }
-        ]
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getOracleSourceData",
-    "inputs": [
-      {
-        "name": "_tokenPair",
-        "type": "string",
-        "internalType": "string"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "tuple",
-        "internalType": "struct IGTXOracleServiceManager.OracleSourceData",
-        "components": [
-          {
-            "name": "coingeckoSymbol",
-            "type": "string",
-            "internalType": "string"
-          },
-          {
-            "name": "binanceSymbol",
-            "type": "string",
-            "internalType": "string"
-          },
-          {
-            "name": "okxSymbol",
-            "type": "string",
-            "internalType": "string"
-          }
-        ]
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "getRestakeableStrategies",
     "inputs": [],
     "outputs": [
@@ -273,6 +268,32 @@
   },
   {
     "type": "function",
+    "name": "maxBlockInterval",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "minBlockInterval",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "owner",
     "inputs": [],
     "outputs": [
@@ -280,6 +301,45 @@
         "name": "",
         "type": "address",
         "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "prices",
+    "inputs": [
+      {
+        "name": "tokenPair",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "value",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "timestamp",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "blockNumber",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "minBlockInterval",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "maxBlockInterval",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -321,34 +381,6 @@
   },
   {
     "type": "function",
-    "name": "registerOracleSource",
-    "inputs": [
-      {
-        "name": "_tokenPair",
-        "type": "string",
-        "internalType": "string"
-      },
-      {
-        "name": "_coingeckoSymbol",
-        "type": "string",
-        "internalType": "string"
-      },
-      {
-        "name": "_binanceSymbol",
-        "type": "string",
-        "internalType": "string"
-      },
-      {
-        "name": "_okxSymbol",
-        "type": "string",
-        "internalType": "string"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "renounceOwnership",
     "inputs": [],
     "outputs": [],
@@ -356,7 +388,48 @@
   },
   {
     "type": "function",
-    "name": "requestOracleTask",
+    "name": "requestNewOracleTask",
+    "inputs": [
+      {
+        "name": "_tokenPair",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "_sources",
+        "type": "tuple[]",
+        "internalType": "struct IGTXOracleServiceManager.Source[]",
+        "components": [
+          {
+            "name": "name",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "identifier",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "network",
+            "type": "string",
+            "internalType": "string"
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "taskId",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "requestOraclePriceTask",
     "inputs": [
       {
         "name": "_tokenPair",
@@ -366,43 +439,9 @@
     ],
     "outputs": [
       {
-        "name": "",
-        "type": "tuple",
-        "internalType": "struct IGTXOracleServiceManager.OracleTask",
-        "components": [
-          {
-            "name": "tokenPair",
-            "type": "string",
-            "internalType": "string"
-          },
-          {
-            "name": "taskCreatedBlock",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          {
-            "name": "source",
-            "type": "tuple",
-            "internalType": "struct IGTXOracleServiceManager.OracleSourceData",
-            "components": [
-              {
-                "name": "coingeckoSymbol",
-                "type": "string",
-                "internalType": "string"
-              },
-              {
-                "name": "binanceSymbol",
-                "type": "string",
-                "internalType": "string"
-              },
-              {
-                "name": "okxSymbol",
-                "type": "string",
-                "internalType": "string"
-              }
-            ]
-          }
-        ]
+        "name": "taskId",
+        "type": "uint32",
+        "internalType": "uint32"
       }
     ],
     "stateMutability": "nonpayable"
@@ -427,26 +466,31 @@
             "internalType": "uint32"
           },
           {
-            "name": "source",
-            "type": "tuple",
-            "internalType": "struct IGTXOracleServiceManager.OracleSourceData",
+            "name": "sources",
+            "type": "tuple[]",
+            "internalType": "struct IGTXOracleServiceManager.Source[]",
             "components": [
               {
-                "name": "coingeckoSymbol",
+                "name": "name",
                 "type": "string",
                 "internalType": "string"
               },
               {
-                "name": "binanceSymbol",
+                "name": "identifier",
                 "type": "string",
                 "internalType": "string"
               },
               {
-                "name": "okxSymbol",
+                "name": "network",
                 "type": "string",
                 "internalType": "string"
               }
             ]
+          },
+          {
+            "name": "isNewData",
+            "type": "bool",
+            "internalType": "bool"
           }
         ]
       },
@@ -565,6 +609,40 @@
   },
   {
     "type": "function",
+    "name": "sources",
+    "inputs": [
+      {
+        "name": "tokenPair",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "name",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "identifier",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "network",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "stakeRegistry",
     "inputs": [],
     "outputs": [
@@ -642,26 +720,31 @@
             "internalType": "uint32"
           },
           {
-            "name": "source",
-            "type": "tuple",
-            "internalType": "struct IGTXOracleServiceManager.OracleSourceData",
+            "name": "sources",
+            "type": "tuple[]",
+            "internalType": "struct IGTXOracleServiceManager.Source[]",
             "components": [
               {
-                "name": "coingeckoSymbol",
+                "name": "name",
                 "type": "string",
                 "internalType": "string"
               },
               {
-                "name": "binanceSymbol",
+                "name": "identifier",
                 "type": "string",
                 "internalType": "string"
               },
               {
-                "name": "okxSymbol",
+                "name": "network",
                 "type": "string",
                 "internalType": "string"
               }
             ]
+          },
+          {
+            "name": "isNewData",
+            "type": "bool",
+            "internalType": "bool"
           }
         ]
       }
@@ -670,7 +753,7 @@
   },
   {
     "type": "event",
-    "name": "OraclePriceInserted",
+    "name": "OraclePriceUpdated",
     "inputs": [
       {
         "name": "tokenPair",
@@ -695,7 +778,7 @@
   },
   {
     "type": "event",
-    "name": "OracleSourceRegistered",
+    "name": "OracleSourceCreated",
     "inputs": [
       {
         "name": "tokenPair",
@@ -704,27 +787,32 @@
         "internalType": "string"
       },
       {
-        "name": "coingeckoSymbol",
-        "type": "string",
+        "name": "sources",
+        "type": "tuple[]",
         "indexed": false,
-        "internalType": "string"
-      },
-      {
-        "name": "binanceSymbol",
-        "type": "string",
-        "indexed": false,
-        "internalType": "string"
-      },
-      {
-        "name": "okxSymbol",
-        "type": "string",
-        "indexed": false,
-        "internalType": "string"
+        "internalType": "struct IGTXOracleServiceManager.Source[]",
+        "components": [
+          {
+            "name": "name",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "identifier",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "network",
+            "type": "string",
+            "internalType": "string"
+          }
+        ]
       },
       {
         "name": "operator",
         "type": "address",
-        "indexed": true,
+        "indexed": false,
         "internalType": "address"
       }
     ],
@@ -757,26 +845,31 @@
             "internalType": "uint32"
           },
           {
-            "name": "source",
-            "type": "tuple",
-            "internalType": "struct IGTXOracleServiceManager.OracleSourceData",
+            "name": "sources",
+            "type": "tuple[]",
+            "internalType": "struct IGTXOracleServiceManager.Source[]",
             "components": [
               {
-                "name": "coingeckoSymbol",
+                "name": "name",
                 "type": "string",
                 "internalType": "string"
               },
               {
-                "name": "binanceSymbol",
+                "name": "identifier",
                 "type": "string",
                 "internalType": "string"
               },
               {
-                "name": "okxSymbol",
+                "name": "network",
                 "type": "string",
                 "internalType": "string"
               }
             ]
+          },
+          {
+            "name": "isNewData",
+            "type": "bool",
+            "internalType": "bool"
           }
         ]
       },
@@ -832,5 +925,99 @@
       }
     ],
     "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "BlockIntervalInvalid",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "blockNumber",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "previousBlockNumber",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidClaimOwner",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidPrice",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidSignature",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidToken",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "OperatorAlreadyResponded",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "operator",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "PriceDeviationTooLarge",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SourcesAlreadyExist",
+    "inputs": [
+      {
+        "name": "tokenPair",
+        "type": "string",
+        "internalType": "string"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "SourcesEmpty",
+    "inputs": [
+      {
+        "name": "tokenPair",
+        "type": "string",
+        "internalType": "string"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "StalePrice",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SuppliedTaskMismatch",
+    "inputs": []
   }
 ]

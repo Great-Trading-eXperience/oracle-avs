@@ -15,7 +15,7 @@
 		"extract:abis": "node utils/abis.js",
 		"download:zk-circuits": "node download-zk.js",
 		"test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" npx jest",
-		"start": "ts-node app.ts"
+		"start": "ts-node-dev --respawn --transpile-only operator/index.ts"
 	},
 	"dependencies": {
 		"@reclaimprotocol/js-sdk": "^2.1.3",

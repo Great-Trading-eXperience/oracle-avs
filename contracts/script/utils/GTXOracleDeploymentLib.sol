@@ -36,6 +36,8 @@ library GTXOracleDeploymentLib {
         Quorum memory quorum
     ) internal returns (DeploymentData memory) {
         DeploymentData memory result;
+        uint256 minBlockInterval = vm.envUint("MIN_BLOCK_INTERVAL");
+        uint256 maxBlockInterval = vm.envUint("MAX_BLOCK_INTERVAL");
 
         // First, deploy upgradeable proxy contracts that will point to the implementations.
         result.gtxOracleServiceManager = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
@@ -48,7 +50,9 @@ library GTXOracleDeploymentLib {
                 core.avsDirectory,
                 result.stakeRegistry,
                 core.rewardsCoordinator,
-                core.delegationManager
+                core.delegationManager,
+                minBlockInterval,
+                maxBlockInterval
             )
         );
         // Upgrade contracts
@@ -61,7 +65,9 @@ library GTXOracleDeploymentLib {
         return result;
     }
 
-    function readDeploymentJson(uint256 chainId) internal returns (DeploymentData memory) {
+    function readDeploymentJson(
+        uint256 chainId
+    ) internal returns (DeploymentData memory) {
         return readDeploymentJson("deployments/", chainId);
     }
 
@@ -86,7 +92,9 @@ library GTXOracleDeploymentLib {
     }
 
     /// write to default output path
-    function writeDeploymentJson(DeploymentData memory data) internal {
+    function writeDeploymentJson(
+        DeploymentData memory data
+    ) internal {
         writeDeploymentJson("deployments/gtxOracle/", block.chainid, data);
     }
 
