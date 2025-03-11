@@ -23,6 +23,11 @@
         "internalType": "address"
       },
       {
+        "name": "_marketFactory",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
         "name": "_minBlockInterval",
         "type": "uint256",
         "internalType": "uint256"
@@ -323,6 +328,19 @@
   },
   {
     "type": "function",
+    "name": "marketFactory",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "maxBlockInterval",
     "inputs": [],
     "outputs": [
@@ -470,6 +488,11 @@
         "internalType": "address"
       },
       {
+        "name": "_tokenAddress2",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
         "name": "_tokenPair",
         "type": "string",
         "internalType": "string"
@@ -536,6 +559,11 @@
         "components": [
           {
             "name": "tokenAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "tokenAddress2",
             "type": "address",
             "internalType": "address"
           },
@@ -680,6 +708,24 @@
   },
   {
     "type": "function",
+    "name": "setPrice",
+    "inputs": [
+      {
+        "name": "_tokenAddress",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_price",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "setRewardsInitiator",
     "inputs": [
       {
@@ -795,6 +841,11 @@
         "components": [
           {
             "name": "tokenAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "tokenAddress2",
             "type": "address",
             "internalType": "address"
           },
@@ -937,6 +988,11 @@
         "components": [
           {
             "name": "tokenAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "tokenAddress2",
             "type": "address",
             "internalType": "address"
           },

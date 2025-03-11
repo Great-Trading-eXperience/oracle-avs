@@ -37,9 +37,6 @@ library GTXOracleDeploymentLib {
         Quorum memory quorum
     ) internal returns (DeploymentData memory) {
         DeploymentData memory result;
-        uint256 minBlockInterval = uint256(vm.envUint("MIN_BLOCK_INTERVAL"));
-        uint256 maxBlockInterval = uint256(vm.envUint("MAX_BLOCK_INTERVAL"));
-        console2.log("block interval", minBlockInterval, maxBlockInterval);
 
         // First, deploy upgradeable proxy contracts that will point to the implementations.
         result.gtxOracleServiceManager = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
@@ -52,9 +49,7 @@ library GTXOracleDeploymentLib {
                 core.avsDirectory,
                 result.stakeRegistry,
                 core.rewardsCoordinator,
-                core.delegationManager,
-                minBlockInterval,
-                maxBlockInterval
+                core.delegationManager
             )
         );
         // Upgrade contracts

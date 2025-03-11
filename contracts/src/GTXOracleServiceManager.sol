@@ -17,6 +17,7 @@ import {TransparentUpgradeableProxy} from
 
 import {Claims} from "./reclaim/Claims.sol";
 import {Reclaim} from "./reclaim/Reclaim.sol";
+import {IMarketFactory} from "./IMarketFactory.sol";
 
 contract GTXOracleServiceManager is ECDSAServiceManagerBase, IGTXOracleServiceManager {
     using ECDSAUpgradeable for bytes32;
@@ -29,19 +30,14 @@ contract GTXOracleServiceManager is ECDSAServiceManagerBase, IGTXOracleServiceMa
     uint256 public minBlockInterval;
     uint256 public maxBlockInterval;
     uint32 public latestTaskNum;
+    address public marketFactory;
 
     // State variables
     mapping(uint32 => bytes32) public allTaskHashes;
     mapping(address => mapping(uint32 => bytes)) public allTaskResponses;
-
     mapping(address tokenAddress => Price) public prices;
     mapping(address tokenAddress => Source[]) public sources;
-    // use for this
     mapping(address tokenAddress => string tokenPair) public pairs;
-
-    // update for next version
-    // mapping(string tokenPair => Price) public prices;
-    // mapping(string tokenPair => Source[]) public sources;
 
     modifier onlyOperator() {
         require(
@@ -55,27 +51,29 @@ contract GTXOracleServiceManager is ECDSAServiceManagerBase, IGTXOracleServiceMa
         address _avsDirectory,
         address _stakeRegistry,
         address _rewardsCoordinator,
-        address _delegationManager,
-        uint256 _minBlockInterval,
-        uint256 _maxBlockInterval
+        address _delegationManager
     )
         ECDSAServiceManagerBase(_avsDirectory, _stakeRegistry, _rewardsCoordinator, _delegationManager)
-    {
+    {}
+
+    function initialize(
+        address _marketFactory,
+        uint256 _minBlockInterval,
+        uint256 _maxBlockInterval
+    ) external {
+        marketFactory = _marketFactory;
         minBlockInterval = _minBlockInterval;
         maxBlockInterval = _maxBlockInterval;
+
+        emit Initialize(marketFactory);
     }
 
     function requestNewOracleTask(
         address _tokenAddress,
+        address _tokenAddress2,
         string calldata _tokenPair,
         Source[] memory _sources
     ) external returns (uint32 taskId) {
-        // if (bytes(_tokenPair).length == 0) {
-        //     revert InvalidToken();
-        // }
-        // if (sources[_tokenPair].length != 0) {
-        //     revert SourcesAlreadyExist(_tokenPair);
-        // }
         if (_tokenAddress == address(0)) {
             revert InvalidToken();
         }
@@ -88,6 +86,7 @@ contract GTXOracleServiceManager is ECDSAServiceManagerBase, IGTXOracleServiceMa
 
         OracleTask memory newTask;
         newTask.tokenAddress = _tokenAddress;
+        newTask.tokenAddress2 = _tokenAddress2;
         newTask.tokenPair = _tokenPair;
         newTask.taskCreatedBlock = uint32(block.number);
         newTask.isNewData = true;
@@ -102,19 +101,7 @@ contract GTXOracleServiceManager is ECDSAServiceManagerBase, IGTXOracleServiceMa
 
     function requestOraclePriceTask(
         address _tokenAddress
-    )
-        external
-        returns (
-            // string calldata _tokenPair
-            uint32 taskId
-        )
-    {
-        // if (bytes(_tokenPair).length == 0) {
-        //     revert InvalidToken();
-        // }
-        // if (sources[_tokenPair].length == 0) {
-        //     revert SourcesEmpty(_tokenPair);
-        // }
+    ) external returns (uint32 taskId) {
         if (_tokenAddress == address(0)) {
             revert InvalidToken();
         }
@@ -127,7 +114,6 @@ contract GTXOracleServiceManager is ECDSAServiceManagerBase, IGTXOracleServiceMa
         newTask.tokenPair = pairs[_tokenAddress];
         newTask.taskCreatedBlock = uint32(block.number);
         newTask.sources = sources[_tokenAddress];
-        // newTask.sources = sources[_tokenPair];
 
         // store hash of task onchain, emit event, and increase taskNum
         allTaskHashes[latestTaskNum] = keccak256(abi.encode(newTask));
@@ -143,7 +129,6 @@ contract GTXOracleServiceManager is ECDSAServiceManagerBase, IGTXOracleServiceMa
         bytes memory signature,
         Reclaim.Proof calldata proof
     ) external {
-        // check that the task is valid, hasn't been responsed yet, and is being responded in time
         if (keccak256(abi.encode(task)) != allTaskHashes[referenceTaskIndex]) {
             revert SuppliedTaskMismatch();
         }
@@ -177,6 +162,10 @@ contract GTXOracleServiceManager is ECDSAServiceManagerBase, IGTXOracleServiceMa
         if (task.isNewData == true && sources[task.tokenAddress].length == 0) {
             sources[task.tokenAddress] = task.sources;
             pairs[task.tokenAddress] = task.tokenPair;
+
+            IMarketFactory(marketFactory).setMarketActivation(
+                task.tokenAddress, task.tokenAddress2, IMarketFactory.Status.ACTIVE
+            );
             emit OracleSourceCreated(task.tokenAddress, task.tokenPair, task.sources, msg.sender);
         }
 
@@ -219,11 +208,9 @@ contract GTXOracleServiceManager is ECDSAServiceManagerBase, IGTXOracleServiceMa
 
     function _validatePrice(
         address _tokenAddress,
-        // string calldata _tokenPair,
         uint256 newPrice,
         uint256 timestamp
     ) internal view {
-        // Price memory currentPrice = prices[_tokenPair];
         Price memory currentPrice = prices[_tokenAddress];
 
         // Restore stale price checks
@@ -247,17 +234,15 @@ contract GTXOracleServiceManager is ECDSAServiceManagerBase, IGTXOracleServiceMa
         }
     }
 
+    function getSources(
+        address _tokenAddress
+    ) external view returns (Source[] memory) {
+        return sources[_tokenAddress];
+    }
+
     function getPrice(
         address _tokenAddress
-    )
-        external
-        view
-        returns (
-            // string calldata _tokenPair
-            uint256
-        )
-    {
-        // Price memory price = prices[_tokenPair];
+    ) external view returns (uint256) {
         Price memory price = prices[_tokenAddress];
         if (price.value == 0) revert InvalidPrice();
         if (block.timestamp - price.timestamp > MAX_PRICE_AGE) {
@@ -266,17 +251,14 @@ contract GTXOracleServiceManager is ECDSAServiceManagerBase, IGTXOracleServiceMa
         return price.value;
     }
 
-    function getSources(
-        address _tokenAddress
-    )
-        external
-        view
-        returns (
-            // string calldata _tokenPair
-            Source[] memory
-        )
-    {
-        // return sources[_tokenPair];
-        return sources[_tokenAddress];
+    // Temporary fucntion used to test liquidation
+    function setPrice(address _tokenAddress, uint256 _price) external {
+        prices[_tokenAddress] = Price({
+            value: _price,
+            timestamp: block.timestamp,
+            blockNumber: block.number,
+            minBlockInterval: minBlockInterval,
+            maxBlockInterval: maxBlockInterval
+        });
     }
 }

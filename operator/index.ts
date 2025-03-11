@@ -89,9 +89,16 @@ const avsDirectory = new ethers.Contract(
 
 const signAndRespondToTask = async (
 	taskIndex: number,
-	task: [string, number, boolean, string, [string, string, string][]]
+	task: [string, string, number, boolean, string, [string, string, string][]]
 ) => {
-	const [tokenAddress, taskCreatedBlock, isNewData, tokenPair, sources] = task;
+	const [
+		tokenAddress,
+		tokenAddress2,
+		taskCreatedBlock,
+		isNewData,
+		tokenPair,
+		sources,
+	] = task;
 	const sourcesArray: { name: string; identifier: string; network: string }[] =
 		new Array(sources.length);
 
@@ -146,13 +153,14 @@ const signAndRespondToTask = async (
 	const proof = validProofs[0].transformedProof;
 	const params = {
 		tokenAddress,
+		tokenAddress2,
 		tokenPair,
 		taskCreatedBlock,
 		sources: sourcesArray,
 		isNewData,
 	};
 
-	// console.log("params", params);
+	console.log("params\n", params);
 
 	const tx = await gtxOracleServiceManager.respondToOracleTask(
 		params,
@@ -236,8 +244,9 @@ export const monitorNewTasks = async () => {
 	console.log("Monitoring for new tasks...");
 
 	const eventTopic = ethers.id(
-		"NewOracleTaskCreated(uint32,(address,uint32,bool,string,(string,string,string)[]))"
+		"NewOracleTaskCreated(uint32,(address,address,uint32,bool,string,(string,string,string)[]))"
 	);
+	// let latestBlock = 1;
 	let latestBlock = await provider.getBlockNumber(); // Track last block
 	let isFetching = false;
 	const taskQueue = new Set();

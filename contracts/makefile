@@ -15,8 +15,7 @@ PRIVATE_KEY := $(PRIVATE_KEY)
 
 # Extract verifier and network URLs from foundry.toml
 VERIFIER := $(shell grep 'verifier =' foundry.toml | cut -d '"' -f2)
-NETWORK_URL := $(shell awk -F ' = ' '/^\[rpc_endpoints\]/{p=1} p && $$1 ~ /'"$(network)"'/ {print $$2}' foundry.toml | tr -d '"')
-
+NETWORK_URL := $(shell awk -F ' = ' '/^\[$$/{p=0} p && $$1 == "$(network)" {print $$2} /^\[rpc_endpoints\]/{p=1}' foundry.toml | tr -d '"')
 
 
 $(info Network URL: $(NETWORK_URL))

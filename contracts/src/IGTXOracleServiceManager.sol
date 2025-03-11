@@ -6,13 +6,9 @@ import {Reclaim} from "./reclaim/Reclaim.sol";
 interface IGTXOracleServiceManager {
     error InvalidPrice();
     error StalePrice();
-    // error InvalidSigner();
     error InvalidSignature();
     error InvalidClaimOwner();
-    // error InsufficientSigners();
     error InvalidToken();
-    // error SourcesAlreadyExist(string tokenPair);
-    // error SourcesEmpty();
     error SourcesAlreadyExist(address token);
     error SourcesEmpty(address token);
     error PriceDeviationTooLarge();
@@ -24,17 +20,17 @@ interface IGTXOracleServiceManager {
     event OracleTaskResponded(
         uint32 indexed taskIndex, OracleTask task, address operator, bytes signature
     );
-    // event OraclePriceUpdated(string indexed tokenPair, uint256 price, uint256 timestamp);
-    // event OracleSourceCreated(string indexed tokenPair, Source[] sources, address operator);
     event OraclePriceUpdated(
         address indexed tokenAddress, string indexed tokenPair, uint256 price, uint256 timestamp
     );
     event OracleSourceCreated(
         address indexed tokenAddress, string indexed tokenPair, Source[] sources, address operator
     );
+    event Initialize(address marketFactory);
 
     struct OracleTask {
-        address tokenAddress; // used by current perpetual
+        address tokenAddress; // long token
+        address tokenAddress2; // short token
         uint32 taskCreatedBlock;
         bool isNewData; // True for new data, False for updating existing data
         string tokenPair;
@@ -55,6 +51,12 @@ interface IGTXOracleServiceManager {
         uint256 maxBlockInterval;
     }
 
+    function initialize(
+        address _marketFactory,
+        uint256 _minBlockInterval,
+        uint256 _maxBlockInterval
+    ) external;
+
     function latestTaskNum() external view returns (uint32);
 
     function allTaskHashes(
@@ -68,6 +70,7 @@ interface IGTXOracleServiceManager {
 
     function requestNewOracleTask(
         address _tokenAddress,
+        address _tokenAddress2,
         string calldata _tokenPair,
         Source[] calldata _sources
     ) external returns (uint32 taskIndex);
