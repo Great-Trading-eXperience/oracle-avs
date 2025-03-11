@@ -6,7 +6,7 @@ The GTX Oracle Actively Validated Service (AVS) contract serves dual purposes as
 
 ## Deployed Contracts
 
-- 📜 **GTXOracleServiceManager**: [0xb216dc7a3a2e2d9952936deb02155d7303d756aa](https://sepolia.arbiscan.io/address/0xb216dc7a3a2e2d9952936deb02155d7303d756aa)
+- 📜 **GTXOracleServiceManager**: [0xdabd9ec2d6cebec99ec913c9aa1702df3cd41a19](https://sepolia.arbiscan.io/address/0xdabd9ec2d6cebec99ec913c9aa1702df3cd41a19)
 
 ### Key Features
 
