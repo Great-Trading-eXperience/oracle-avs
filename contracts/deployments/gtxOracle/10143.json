@@ -1,11 +1,11 @@
 {
-	"lastUpdate": { "timestamp": "1741731615", "block_number": "7350824" },
+	"lastUpdate": { "timestamp": "1741786913", "block_number": "7448154" },
 	"addresses": {
-		"proxyAdmin": "0xbf7d5fca0303dc711f6cdc08693da6eb2df5d7ce",
-		"gtxOracleServiceManager": "0xdabd9ec2d6cebec99ec913c9aa1702df3cd41a19",
-		"gtxOracleServiceManagerImpl": "0x2f7296aebcbc5a8d67a65fa6bf09dd74c70bc60f",
-		"stakeRegistry": "0xe70271dcda6506e4dde75d21b6a02c8bcc0aab0b",
-		"stakeRegistryImpl": "0x8f86351a1394c07300f6f2071dafe931f209efc7",
+		"proxyAdmin": "0xb61d206e72c3fce41912cb9c638ed4a6a55b6e4e",
+		"gtxOracleServiceManager": "0x777f7b7f1757ee06128e4840d7b503a75a7a06b4",
+		"gtxOracleServiceManagerImpl": "0x33916ad2ba6abd0f77b75ce9af2d5ecb4bfcd11b",
+		"stakeRegistry": "0xfb09f37ba94784467e606db11a154aa1df4d8a22",
+		"stakeRegistryImpl": "0x1a68453a005267e7194559a2c32c5c04f78a5483",
 		"strategy": "0xce92bb2c0ba5d803c6024ef4bee18ca860867631",
 		"token": "0xc7f2cf4845c6db0e1a1e91ed41bcd0fcc1b0e141"
 	}

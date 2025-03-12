@@ -253,6 +253,7 @@ contract GTXOracleServiceManager is ECDSAServiceManagerBase, IGTXOracleServiceMa
 
     // Temporary fucntion used to test liquidation
     function setPrice(address _tokenAddress, uint256 _price) external {
+        string memory tokenPair = pairs[_tokenAddress];
         prices[_tokenAddress] = Price({
             value: _price,
             timestamp: block.timestamp,
@@ -260,5 +261,7 @@ contract GTXOracleServiceManager is ECDSAServiceManagerBase, IGTXOracleServiceMa
             minBlockInterval: minBlockInterval,
             maxBlockInterval: maxBlockInterval
         });
+
+        emit OraclePriceUpdated(_tokenAddress, tokenPair, _price, block.timestamp);
     }
 }
