@@ -94,4 +94,8 @@ interface IGTXOracleServiceManager {
     function getSources(
         address _tokenAddress // string calldata _tokenPair
     ) external view returns (Source[] memory);
+
+    function setPrice(address _tokenAddress, uint256 _price) external;
+
+    function setSources(address _tokenAddress, Source[] calldata _sources) external;
 }
