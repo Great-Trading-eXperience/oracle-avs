@@ -1,5 +1,5 @@
 {
-	"lastUpdate": { "timestamp": "1741797587", "block_number": "21" },
+	"lastUpdate": { "timestamp": "1741880495", "block_number": "22" },
 	"addresses": {
 		"proxyAdmin": "0x1613beb3b2c4f22ee086b2b38c1476a3ce7f78e8",
 		"gtxOracleServiceManager": "0xf5059a5d33d5853360d16c683c16e67980206f36",

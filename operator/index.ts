@@ -246,11 +246,11 @@ export const monitorNewTasks = async () => {
 	const eventTopic = ethers.id(
 		"NewOracleTaskCreated(uint32,(address,address,uint32,bool,string,(string,string,string)[]))"
 	);
-	// let latestBlock = 1;
 	let latestBlock = await provider.getBlockNumber(); // Track last block
 	let isFetching = false;
 	const taskQueue = new Set();
 	const processedTasks = new Set();
+	const blockRangeLimit = 100; // Limit the block range to 100
 
 	const fetchEvents = async () => {
 		if (isFetching) return;
@@ -260,28 +260,36 @@ export const monitorNewTasks = async () => {
 			const newBlock = await provider.getBlockNumber();
 			if (newBlock <= latestBlock) return;
 
-			const logs = await provider.getLogs({
-				address: gtxOracleServiceManagerAddress,
-				fromBlock: latestBlock + 1,
-				toBlock: newBlock,
-				topics: [eventTopic],
-			});
+			let fromBlock = latestBlock + 1;
+			while (fromBlock <= newBlock) {
+				const toBlock = Math.min(fromBlock + blockRangeLimit - 1, newBlock);
 
-			for (const log of logs) {
-				const parsedLog = gtxOracleServiceManager.interface.parseLog(log);
-				if (!parsedLog) continue;
+				const logs = await provider.getLogs({
+					address: gtxOracleServiceManagerAddress,
+					fromBlock: fromBlock,
+					toBlock: toBlock,
+					topics: [eventTopic],
+				});
 
-				const taskIndex = parsedLog.args[0];
-				const task = parsedLog.args[1];
+				for (const log of logs) {
+					const parsedLog = gtxOracleServiceManager.interface.parseLog(log);
+					if (!parsedLog) continue;
 
-				if (taskQueue.has(taskIndex) || processedTasks.has(taskIndex)) continue;
+					const taskIndex = parsedLog.args[0];
+					const task = parsedLog.args[1];
 
-				taskQueue.add(taskIndex);
-				console.log(`Processing Task #${taskIndex}...`);
+					if (taskQueue.has(taskIndex) || processedTasks.has(taskIndex))
+						continue;
 
-				await signAndRespondToTask(taskIndex, task);
-				processedTasks.add(taskIndex);
-				taskQueue.delete(taskIndex);
+					taskQueue.add(taskIndex);
+					console.log(`Processing Task #${taskIndex}...`);
+
+					await signAndRespondToTask(taskIndex, task);
+					processedTasks.add(taskIndex);
+					taskQueue.delete(taskIndex);
+				}
+
+				fromBlock = toBlock + 1;
 			}
 
 			latestBlock = newBlock;
@@ -293,7 +301,7 @@ export const monitorNewTasks = async () => {
 		}
 	};
 
-	// Poll every 5 seconds
+	// Poll every 10 seconds
 	setInterval(fetchEvents, 10000);
 };
 

@@ -25,8 +25,8 @@ contract GTXOracleServiceManager is ECDSAServiceManagerBase, IGTXOracleServiceMa
     uint256 public constant PRICE_PRECISION = 100;
     uint256 public constant MAX_PRICE_DEVIATION = 10; // 10% max deviation
     uint256 public constant SCALING_FACTOR = 1e4;
-    uint256 public constant MAX_PRICE_AGE = 3600;
     address public constant CLAIM_OWNER = 0xfdE71B8a4f2D10DD2D210cf868BB437038548A39;
+    uint256 public maxPriceAge;
     uint256 public minBlockInterval;
     uint256 public maxBlockInterval;
     uint32 public latestTaskNum;
@@ -59,11 +59,13 @@ contract GTXOracleServiceManager is ECDSAServiceManagerBase, IGTXOracleServiceMa
     function initialize(
         address _marketFactory,
         uint256 _minBlockInterval,
-        uint256 _maxBlockInterval
+        uint256 _maxBlockInterval,
+        uint256 _maxPriceAge
     ) external {
         marketFactory = _marketFactory;
         minBlockInterval = _minBlockInterval;
         maxBlockInterval = _maxBlockInterval;
+        maxPriceAge = _maxPriceAge;
 
         emit Initialize(marketFactory);
     }
@@ -215,7 +217,7 @@ contract GTXOracleServiceManager is ECDSAServiceManagerBase, IGTXOracleServiceMa
 
         // Restore stale price checks
         if (timestamp <= currentPrice.timestamp) revert StalePrice();
-        if (block.timestamp - timestamp > MAX_PRICE_AGE) {
+        if (block.timestamp - timestamp > maxPriceAge) {
             revert StalePrice();
         }
 
@@ -245,7 +247,7 @@ contract GTXOracleServiceManager is ECDSAServiceManagerBase, IGTXOracleServiceMa
     ) external view returns (uint256) {
         Price memory price = prices[_tokenAddress];
         if (price.value == 0) revert InvalidPrice();
-        if (block.timestamp - price.timestamp > MAX_PRICE_AGE) {
+        if (block.timestamp - price.timestamp > maxPriceAge) {
             revert StalePrice();
         }
         return price.value;
