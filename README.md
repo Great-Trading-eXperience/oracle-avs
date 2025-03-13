@@ -2,7 +2,7 @@
 
 ## Overview
 
-The GTX Oracle Actively Validated Service (AVS) contract serves dual purposes as both an AVS and an oracle. It is designed to facilitate the retrieval and storage of off-chain price data from various sources such as Binance, OKX, GeckoTerminal, and DexScreener. This contract works in conjunction with the GTXOracle main contract to provide a seamless and efficient mechanism for price evaluation and storage.
+The GTX Oracle Autonomous Verifiable Service (AVS) contract serves dual purposes as both an AVS and an oracle. It is designed to facilitate the retrieval and storage of off-chain price data from various sources such as Binance, OKX, GeckoTerminal, and DexScreener. This contract works in conjunction with the GTXOracle main contract to provide a seamless and efficient mechanism for price evaluation and storage.
 
 ## Deployed Contracts
 
